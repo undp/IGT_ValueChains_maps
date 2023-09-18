@@ -1,0 +1,80 @@
+# Rastreador de crecimiento inclusivo ----
+# Ultima fecha de modificacion: 3 julio, 2023
+# Mapa de Naciones Unidas para LAC
+#-------------------------------------------------------#
+
+#--------------------------#
+# packages ----
+#--------------------------#
+
+rm(list=ls())
+pacman::p_load(tidyverse, glue, sf, rgdal)
+# .rs.restartR()
+
+#--------------------------#
+# paths ----
+#--------------------------#
+
+datos_ori <- "01_Datos_originales"
+datos <- "02_Datos"
+graficas <- "03_Graficas"
+options(scipen = 999)
+
+#-------------------------------------------------------#
+# 1. Abrir Mapas ----
+#-------------------------------------------------------#
+
+# Abrir mapa UN y filtrar para LAC
+# nam_en: nombre en ingles, lbl_en: etiqueta del pais en ingles
+# UN define las mayusculas/minusculas segun el tipo de pais/territorio
+# Se recomienda mantener Eckert IV projection para evitar distorsiones en tamanos y distancias
+mapa_un <- st_read(glue("{datos_ori}/Mapas/UN_Geodata_simplified/BNDA_simplified.shp")) %>%
+  janitor::clean_names() %>%
+  dplyr::select(subreg, nam_en, lbl_en) %>%
+  # Solo ALC
+  dplyr::filter(subreg == "Latin America and the Caribbean")
+
+# Pasar nombres a espanol siguiendo la lista oficial de UN
+# https://unterm.un.org/unterm2/en/country
+mapa_un <- mapa_un %>% mutate(country = lbl_en)
+mapa_un$country[mapa_un$country == 'Aruba (Neth.)'] <- 'Aruba (Países Bajos)'
+mapa_un$country[mapa_un$country == 'ANTIGUA AND BARBUDA'] <- 'ANTIGUA Y BARBUDA'
+mapa_un$country[mapa_un$country == 'BELIZE'] <- 'BELICE'
+mapa_un$country[mapa_un$country == 'Anguilla *'] <- 'Anguila *'
+mapa_un$country[mapa_un$country == 'Saint Martin (Fr.)'] <- 'San Martín (Fr.)'
+mapa_un$country[mapa_un$country == 'BRAZIL'] <- 'BRASIL'
+mapa_un$country[mapa_un$country == 'Curaçao (Neth.)'] <- 'Curazao (Países Bajos)'
+mapa_un$country[mapa_un$country == 'Cayman Islands *'] <- 'Islas Caimán *'
+mapa_un$country[mapa_un$country == 'DOMINICAN REPUBLIC'] <- 'REPÚBLICA DOMINICANA'
+mapa_un$country[mapa_un$country == 'Falkland Islands (Malvinas) *'] <- 'Islas Malvinas *'
+mapa_un$country[mapa_un$country == 'French Guiana (Fr.)'] <- 'Guyana Francesa (Fr.)'
+mapa_un$country[mapa_un$country == 'Guadeloupe (Fr.)'] <- 'Guadalupe (Fr.)'
+mapa_un$country[mapa_un$country == 'GRENADA'] <- 'GRANADA'
+mapa_un$country[mapa_un$country == 'HAITI'] <- 'HAITÍ'
+mapa_un$country[mapa_un$country == 'SAINT KITTS AND NEVIS'] <- 'SAINT KITTS Y NEVIS'
+mapa_un$country[mapa_un$country == 'SAINT LUCIA'] <- 'SANTA LUCÍA'
+mapa_un$country[mapa_un$country == 'MEXICO'] <- 'MÉXICO'
+mapa_un$country[mapa_un$country == 'Martinique (Fr.)'] <- 'Martinica (Fr.)'
+mapa_un$country[mapa_un$country == 'PANAMA'] <- 'PANAMÁ'
+mapa_un$country[mapa_un$country == 'PERU'] <- 'PERÚ'
+mapa_un$country[mapa_un$country == 'Puerto Rico (USA)'] <- 'Puerto Rico (EUA)'
+mapa_un$country[mapa_un$country == 'South Georgia and the South Sandwich Is.'] <- 'Islas Georgias del Sur y Sandwich del Sur'
+mapa_un$country[mapa_un$country == 'Sint Maarten (Neth.)'] <- 'Isla de San Martín (Países Bajos)'
+mapa_un$country[mapa_un$country == 'Turks and Caicos Islands *'] <- 'Islas Turcas y Caicos *'
+mapa_un$country[mapa_un$country == 'TRINIDAD AND TOBAGO'] <- 'TRINIDAD Y TOBAGO'
+mapa_un$country[mapa_un$country == 'SAINT VINCENT AND THE GRENADINES'] <- 'SAN VICENTE Y LAS GRANADINAS'
+mapa_un$country[mapa_un$country == 'British Virgin Islands *'] <- 'Islas Vírgenes Británicas *'
+mapa_un$country[mapa_un$country == 'United States Virgin Islands *'] <- 'Islas Vírgenes de los Estados Unidos *'
+mapa_un$country[mapa_un$country == 'Bonaire (Neth.)'] <- 'Bonaire (Países Bajos)'
+mapa_un$country[mapa_un$country == 'Sint Eustatius (Neth.)'] <- 'San Eustaquio (Países Bajos)'
+mapa_un$country[mapa_un$country == 'Saba (Neth.)'] <- 'Saba (Países Bajos)'
+mapa_un$country[mapa_un$country == 'Galápagos Islands (Ecuador)'] <- 'Islas Galápagos (Ecuador)'
+# mapa_un$country[mapa_un$country == ''] <- ''
+
+mapa_un <- mapa_un %>% relocate(country, .before = 'geometry')
+
+# Exportar mapa UN
+st_write(mapa_un, glue("{datos}/Mapas/mapa_un.shp"))
+
+
+
