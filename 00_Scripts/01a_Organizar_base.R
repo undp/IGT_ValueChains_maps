@@ -1,6 +1,6 @@
 #-------------------------------------------------------#
 # Rastreador de crecimiento inclusivo ----
-# Ultima fecha de modificacion: 18 de sept, 2023
+# Ultima fecha de modificacion: 18 de sept 2023
 # Organizar base de datos del metaanalisis
 #-------------------------------------------------------#
 
