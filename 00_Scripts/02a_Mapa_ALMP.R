@@ -13,7 +13,7 @@ rm(list=ls())
 pacman::p_load(tidyverse, glue, sf, leaflet, rgdal, htmltools, leafem, leaflegend)
 # .rs.restartR()
 
-#--------------------------#
+#--------------------------#.   
 # paths ----
 #--------------------------#
 
