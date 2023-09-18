@@ -1,6 +1,6 @@
 #-------------------------------------------------------#
 # Rastreador de crecimiento inclusivo ----
-# Ultima fecha de modificacion: 13 julio, 2023
+# Ultima fecha de modificacion: 18 sept, 2023
 # Mapa interactivo por tipo de programa (Jovenes en Accion, SARE, PROEMPLEO)
 # Este mapa incluye resultados de programas de jovenes y mujeres dentro de la categoria "general"
 #-------------------------------------------------------#
@@ -364,6 +364,6 @@ mapa_final <- browsable(
 mapa_final
 
 # Exportar
-saveRDS(mapa_final, glue("{graficas}/mapa_almp_un-ilo.rds"))
-save_html(mapa_final, glue("{graficas}/mapa_almp_un-ilo.html"))
+# saveRDS(mapa_final, glue("{graficas}/mapa_almp_un-ilo.rds"))
+save_html(mapa_final, "index.html")
 
