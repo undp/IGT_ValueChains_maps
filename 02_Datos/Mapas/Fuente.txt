@@ -1,0 +1,2 @@
+El procesamiento del mapa "mapa_un.shp" se realizó en el script "01b_Procesar_mapas.R" en la carpeta:
+"C:\Users\User\Dropbox\PNUD_Inclusive_Growth\Mapa\00_Scripts"
