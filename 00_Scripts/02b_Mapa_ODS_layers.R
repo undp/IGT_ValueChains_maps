@@ -1,6 +1,6 @@
 #-------------------------------------------------------#
 # ODS Cadenas de Valor ----
-# Ultima fecha de modificacion: 26 sept, 2023
+# Ultima fecha de modificacion: 23 nov, 2023
 # Este mapa incluye resultados de programas ODS Cadenas de Valor por pais y programa
 #-------------------------------------------------------#
 
@@ -29,18 +29,23 @@ currentyear <- 2023
 country_text <- "22px"
 link_text <- "18px"
 opacity <- 1
-text_width <- 80*0.8
+text_width <- 80*0.6
 met_width <- 130
 logo_width <- 150*1.5
 logo_size_h <- 150
 logo_size_w <- 200
 # logo_size_h <- 250*2.5
 # logo_size_w <- 140*2.5
-sector_width <- 250
+sector_width <- 220
 part_width <- 150*1.5
 num_width <- 80
 popup_w <- 1200
 popup_h <- 800
+# pad <- "3px 8px"
+pad <- "1px 4px"
+
+# Desactivar coordenadas esfericas: importante para manejar SHP de UN (no esta en long-lat)
+sf_use_s2(FALSE)
 
 #-------------------------------------------------------#
 # 0. Logos y URL ----
@@ -89,12 +94,6 @@ venezuela <- "https://github.com/undp/IGT_ValueChains_maps/blob/main/01_Datos_or
 # Rep Dominicana
 rep_dom <- "https://github.com/undp/IGT_ValueChains_maps/blob/main/01_Datos_originales/Country_flags/Flag_of_the_Dominican_Republic.svg.png?raw=true" 
 
-# Botswana
-
-
-# Angola
-
-
 #--------------------------#
 # C. Metodologias ----
 #--------------------------#
@@ -133,8 +132,9 @@ mapa_cont <- st_read(glue("{datos_ori}/Mapas/UN_Geodata_simplified/SDGA_simplifi
 mapa_un_all <- st_read(glue("{datos_ori}/Mapas/UN_Geodata_simplified/BNDA_simplified.shp")) %>%
   janitor::clean_names() %>%
   dplyr::select(georeg, nam_en, lbl_en) %>%
-  # Eliminamos la antartica
-  dplyr::filter(georeg != "ANT") %>%
+  # Eliminamos la Antartica y Oceania
+  # dplyr::filter(georeg != "ANT" & georeg != "OCE") %>%
+  # dplyr::filter(georeg != "ANT" & georeg != "OCE") %>%
   # dplyr::filter(lbl_en != "Greenland (Denmark)") %>%
   rename(country = lbl_en) %>%
   dplyr::select(country, georeg, geometry)
@@ -174,7 +174,6 @@ data_all <- readRDS(glue("{datos}/datos_pais_empresa_{str_to_lower(mes)}_{curren
   mutate(
     country = str_to_upper(country)
   ) %>% dplyr::filter(country != "TOTAL")
-
 
 # URL Logos bandera paises
 banderas <- data.frame(country = unique(data_res$country), logo = NA)
@@ -344,6 +343,14 @@ prog_table <- lapply(unique(data_prog$country), function(x){
 # Unir tabla de estadisticas con cada pais
 mapa_prog <- meta_map %>% left_join(prog_table, by = "country")
 
+# Cortar mapas según area de interes (America, Europa, Africa)
+# Bounding box coordinates
+# https://boundingbox.klokantech.com/
+bound_cords <- st_as_sfc(st_bbox(c(xmin = -140.5, xmax = 152.5, ymax = 59.1, ymin = -58.4), crs = st_crs(4326)))
+# bound_cords <- st_as_sfc(st_bbox(c(xmin = -140.5, xmax = 152.5, ymax = 59.1, ymin = -58.4), crs = st_crs(4326)))
+mapa_un_all <- st_make_valid(mapa_un_all)
+mapa_un_all <- st_intersection(mapa_un_all, bound_cords)
+
 #-------------------------------------------------------#
 # 4. Mapas ----
 #-------------------------------------------------------#
@@ -358,9 +365,9 @@ mapa_ods <-
         L.Map.scrollWheelZoom = false;
     }") %>%
   # Capa LAC
-  fitBounds( -180, -90, 180, 90) %>%
+  # fitBounds( -140.5, -57.1, 61.3, 60.1) %>%
   addControl(disclaimer, position = "bottomleft") %>%
-  # fitBounds(bbox[1], bbox[2], bbox[3], bbox[4]) %>%
+  fitBounds(lat1 = -140.5, lat2 = 61.3, lng1 = 60.1, lng2 = -57.1) %>%
   addPolygons(data = mapa_un_all,
     # data = mapa_un_all,          
               # Color de los limites de los paises
@@ -374,7 +381,8 @@ mapa_ods <-
               ) %>%
   # Centrar mapa en Oceano atlantico
   clearBounds() %>%
-  setView(lng = -30.700545262011225, lat = 8.384568291083305, zoom = 3) %>%
+  # setView(lng = -30.700545262011225, lat = 8.384568291083305, zoom = 3) %>%
+  setView(lng = -25.770042719697965, lat = -5.290852554307293, zoom = 3) %>%
   # Informacion por pais
   addPolygons(data = meta_map_con,
               popup = ~table_agg,
@@ -389,7 +397,7 @@ mapa_ods <-
                 bringToFront = TRUE),
               label = ~country,
               labelOptions = labelOptions(
-                style = list("font-weight" = "normal", padding = "3px 8px"),
+                style = list("font-weight" = "normal", padding = pad),
                 textsize = country_text, direction = "auto")) %>%
   
   # Informacion por programa-pais
@@ -406,7 +414,7 @@ mapa_ods <-
                 bringToFront = TRUE),
               label = ~country,
               labelOptions = labelOptions(
-                style = list("font-weight" = "normal", padding = "3px 8px"),
+                style = list("font-weight" = "normal", padding = pad),
                 textsize = country_text, direction = "auto")) %>%
   # Control de capas
   addLayersControl(
@@ -455,7 +463,7 @@ mapa_final <- browsable(
 mapa_final
   
 # mapa_final
-# save_html(mapa_final, glue("{graficas}/test/index.html"))
+# save_html(mapa_final, "test/index.html")
 save_html(mapa_final, glue("{graficas}/mapa_ods_cv_guides.html"))
 
 

@@ -24,7 +24,7 @@ mes <- "Ago"
 currentyear <- 2023
 
 #-------------------------------------------------------#
-# 1. Abrir datos ----
+# 1. Abrir datos 2023 ----
 #-------------------------------------------------------#
 
 #--------------------------#
@@ -61,7 +61,7 @@ data_res$country[data_res$country == 'Mexico'] <- 'México'
 data_res$country[data_res$country == 'Peru'] <- 'Perú'
 
 #--------------------------#
-# B. Nivel empresas ----
+# B. Nivel programa ----
 #--------------------------#
 
 data_all <- readxl::read_excel(glue("{datos_ori}/Matriz Seguimiento ODS CV {mes} {currentyear} Compilada.xlsx"),
@@ -91,4 +91,90 @@ data_all$country[data_all$country == 'Peru'] <- 'Perú'
 
 saveRDS(data_res, glue("{datos}/datos_pais_{str_to_lower(mes)}_{currentyear}.rds"))
 saveRDS(data_all, glue("{datos}/datos_pais_empresa_{str_to_lower(mes)}_{currentyear}.rds"))
-# data_cv <- data_res %>% left_join(data_all, by = "country")
+
+#-------------------------------------------------------#
+# 2. Datos historicos 2008-2022 ----
+#-------------------------------------------------------#
+
+#--------------------------#
+# A. Nivel pais ----
+#--------------------------#
+
+# Abrimos excel original con informacion historica por pais y programa 
+data_icsn <- readxl::read_excel(glue("{datos_ori}/SDGVC METHODOLOGIES BREAKDOWN.xlsx"),
+                               sheet = 'ICSN') %>%
+  clean_names() %>%
+  mutate(metodologia = "Iniciando Con Su Negocio") %>%
+  dplyr::filter(str_detect(pais, "SUBTOT")) %>%
+  mutate(hombres = as.numeric(hombres), mujeres = as.numeric(mujeres), empresas_participantes = as.numeric(empresas_participantes))
+
+data_ccsn <- readxl::read_excel(glue("{datos_ori}/SDGVC METHODOLOGIES BREAKDOWN.xlsx"),
+                                sheet = 'CCSN') %>%
+  clean_names() %>%
+  mutate(metodologia = "Creciendo Con Su Negocio") %>%
+  dplyr::filter(str_detect(pais, "SUBTOT")) %>%
+  mutate(hombres = as.numeric(hombres), mujeres = as.numeric(mujeres), empresas_participantes = as.numeric(empresas_participantes))
+
+data_em <- readxl::read_excel(glue("{datos_ori}/SDGVC METHODOLOGIES BREAKDOWN.xlsx"),
+                                sheet = 'EM') %>%
+  clean_names() %>%
+  mutate(metodologia = "En Marcha") %>%
+  dplyr::filter(str_detect(pais, "SUBTOT")) %>%
+  mutate(hombres = as.numeric(hombres), mujeres = as.numeric(mujeres), empresas_participantes = as.numeric(empresas_participantes))
+
+data_emd <- readxl::read_excel(glue("{datos_ori}/SDGVC METHODOLOGIES BREAKDOWN.xlsx"),
+                                sheet = 'EMD') %>%
+  clean_names() %>%
+  mutate(metodologia = "En Marcha Digital") %>%
+  dplyr::filter(str_detect(pais, "SUBTOT")) %>%
+  mutate(hombres = as.numeric(hombres), mujeres = as.numeric(mujeres), empresas_participantes = as.numeric(empresas_participantes))
+
+data_pdp <- readxl::read_excel(glue("{datos_ori}/SDGVC METHODOLOGIES BREAKDOWN.xlsx"),
+                                sheet = 'PDP') %>%
+  clean_names()  %>%
+  mutate(metodologia = "Desarrollo de Proveedores") %>%
+  dplyr::filter(str_detect(pais, "SUBTOT")) %>%
+  mutate(hombres = as.numeric(hombres), mujeres = as.numeric(mujeres), empresas_participantes = as.numeric(empresas_participantes))
+
+# Unir informacion por programa
+data_pais <- bind_rows(data_icsn, data_ccsn, data_em, data_emd, data_pdp) %>%
+  dplyr::select(-adaptacion) %>%
+  mutate(pais = gsub("SUBTOT ", "", pais)) %>%
+  rename(country = pais, num_empresas = empresas_participantes, num_hombres = hombres, num_mujeres = mujeres)
+
+# Corregir nombres de pais
+data_pais$country[data_pais$country == 'MEXICO'] <- 'MÉXICO'
+data_pais$country[data_pais$country == 'PERU'] <- 'PERÚ'
+data_pais$country[data_pais$country == 'DOMINICANA'] <- 'REPÚBLICA DOMINICANA'
+data_pais$country[data_pais$country == 'HAITI'] <- 'HAITÍ'
+
+# Agrupar datos a nivel de pais
+data_pais_clean <- data_pais %>%
+  dplyr::select(-metodologia) %>%
+  group_by(country) %>%
+  summarise(across(everything(), ~sum(.x, na.rm = TRUE))) %>%
+  mutate(period = "2008 - Agosto 2022") 
+
+#--------------------------#
+# B. Nivel programa ----
+#--------------------------#
+
+data_prog <- data_pais %>%
+  mutate(period = "2008 - Agosto 2022")
+
+#--------------------------#
+# C. Exportar bases ----
+#--------------------------#
+
+saveRDS(data_pais_clean, glue("{datos}/datos_pais_2008_2022.rds"))
+saveRDS(data_prog, glue("{datos}/datos_pais_empresa_2008_2022.rds"))
+
+
+
+
+
+
+
+
+
+
