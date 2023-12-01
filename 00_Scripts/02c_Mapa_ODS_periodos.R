@@ -1,6 +1,6 @@
 #-------------------------------------------------------#
 # ODS Cadenas de Valor ----
-# Ultima fecha de modificacion: 24 nov, 2023
+# Ultima fecha de modificacion: 1 dic, 2023
 # Este mapa incluye resultados de programas ODS Cadenas de Valor por pais y programa, por año
 #-------------------------------------------------------#
 
@@ -141,7 +141,7 @@ url_ods <- readxl::read_excel(glue("{datos_ori}/links_paises.xlsx")) %>%
 nota_periodo <- HTML("<p style='text-align: left;'>Los datos históricos corresponden a la información recopilada desde el inicio del programa en 2008 hasta agosto de 2022.</p>")
 
 # Disclaimer para mapa
-disclaimer <- HTML("<p style='text-align: left;'> <strong>Nota: Los datos históricos corresponden a la información recopilada desde el inicio del programa en 2008 hasta agosto de 2022.</strong> <br> Las designaciones utilizadas y la presentación de material en este mapa no implican la expresión de ninguna opinión por parte de la Secretaría de las Naciones Unidas o el PNUD con respecto al estado legal de ningún país, territorio, ciudad o área, ni de sus autoridades, ni con respecto a la delimitación de sus fronteras o límites.</p>")
+disclaimer <- HTML("<p style='text-align: left;'> <strong>Nota: Los datos históricos corresponden a la información recopilada en Agosto del año 2022, y cubren el periodo 2008-Agosto 2022.</strong> <br> Las designaciones utilizadas y la presentación de material en este mapa no implican la expresión de ninguna opinión por parte de la Secretaría de las Naciones Unidas o el PNUD con respecto al estado legal de ningún país, territorio, ciudad o área, ni de sus autoridades, ni con respecto a la delimitación de sus fronteras o límites.</p>")
 # disclaimer <- HTML("<p style='text-align: left;'>Las designaciones utilizadas y la presentación de material en este mapa no implican la expresión de ninguna opinión por parte de la Secretaría de las Naciones Unidas o el PNUD con respecto al estado legal de ningún país, territorio, ciudad o área, ni de sus autoridades, ni con respecto a la delimitación de sus fronteras o límites.</p>")
 
 #--------------------------#
@@ -182,6 +182,9 @@ haiti <- "https://github.com/undp/IGT_ValueChains_maps/blob/main/01_Datos_origin
 
 # Honduras
 honduras <- "https://github.com/undp/IGT_ValueChains_maps/blob/main/01_Datos_originales/Country_flags/Flag_of_Honduras.svg.png?raw=true"
+
+# Pakistan
+pakistan <- "https://github.com/undp/IGT_ValueChains_maps/blob/main/01_Datos_originales/Country_flags/Flag_of_Pakistan.svg.png?raw=true"
 
 #--------------------------#
 # D. Metodologias ----
@@ -227,7 +230,7 @@ mapa_un_all <- st_read(glue("{datos_ori}/Mapas/UN_Geodata_simplified/BNDA_simpli
 mapa_un <- st_read(glue("{datos_ori}/Mapas/UN_Geodata_simplified/BNDA_simplified.shp")) %>%
   janitor::clean_names() %>%
   dplyr::select(georeg, nam_en, lbl_en) %>%
-  dplyr::filter(georeg == "AME" | georeg == "EUR") %>%
+  dplyr::filter(georeg == "AME" | georeg == "EUR" | georeg == "ASI") %>%
   rename(country = lbl_en) %>%
   dplyr::select(country, geometry)
 
@@ -236,10 +239,12 @@ mapa_un$country[mapa_un$country == 'MEXICO'] <- 'MÉXICO'
 mapa_un$country[mapa_un$country == 'PERU'] <- 'PERÚ'
 mapa_un$country[mapa_un$country == 'DOMINICAN REPUBLIC'] <- 'REPÚBLICA DOMINICANA'
 mapa_un$country[mapa_un$country == 'HAITI'] <- 'HAITÍ'
+mapa_un$country[mapa_un$country == 'PAKISTAN'] <- 'PAKISTÁN'
 mapa_un_all$country[mapa_un_all$country == 'MEXICO'] <- 'MÉXICO'
 mapa_un_all$country[mapa_un_all$country == 'PERU'] <- 'PERÚ'
 mapa_un_all$country[mapa_un_all$country == 'DOMINICAN REPUBLIC'] <- 'REPÚBLICA DOMINICANA'
 mapa_un_all$country[mapa_un_all$country == 'HAITI'] <- 'HAITÍ'
+mapa_un_all$country[mapa_un_all$country == 'PAKISTAN'] <- 'PAKISTÁN'
 
 #-------------------------------------------------------#
 # 2. Organizar datos ----
@@ -290,6 +295,7 @@ banderas$logo[banderas$country == "VENEZUELA"] <- venezuela
 banderas$logo[banderas$country == "HONDURAS"] <- honduras
 banderas$logo[banderas$country == "BARBADOS"] <- barbados
 banderas$logo[banderas$country == "HAITÍ"] <- haiti
+banderas$logo[banderas$country == "PAKISTÁN"] <- pakistan
 
 #--------------------------#
 # C. Emparejar con mapas ----
@@ -391,7 +397,14 @@ data_prog <- data_all %>%
   rename(Metodologia = metodologia, Empresas = num_empresas, Hombres = num_hombres, Mujeres = num_mujeres, 
          `Total personas` = num_total_personas, Sector = act_econ) %>%
   arrange(country, Metodologia)  %>%
-  mutate(period = ifelse(str_detect(period, "2023"), "2023", period)) 
+  # Corregimos programas sin sector economico definido, y periodo de analisis
+  mutate(period = ifelse(str_detect(period, "2023"), "2023", period),
+         Sector = ifelse(is.na(Sector), "", Sector))
+
+# Traducir sectores a espanol
+data_prog$Sector[data_prog$Sector == "Food industry & services"] <- "Industria y servicios alimentarios"
+data_prog$Sector[data_prog$Sector == "MSMEs (Beauty salon, retail trade, sale of prepared food, household appliance repair, welding services, etc.)"] <- "Mipymes (salones de belleza, comercio al por menor, venta de comida preparada, reparación de electrodomésticos, servicios de soldadura, etc.)"
+data_prog$Sector[data_prog$Sector == "Tourism & food industry"] <- "Turismo e industria alimentaria"
 
 # Tabla de estadisticas por pais
 tabla_h <- lapply(unique(data_prog$country[data_prog$period == "2008 - Agosto 2022"]), fun_prog_table, y = "2008 - Agosto 2022", base = data_prog) %>%
@@ -556,7 +569,7 @@ map_prog <- leaflet(mapa_base, height = "100vh", width = "100vw",
   # 2008-2022 (Historico)
   addPolygons(data = mapa_prog %>% dplyr::filter(period == "2008 - Agosto 2022"),
               popup = ~table_prog,
-              popupOptions = popupOptions(closeButton = F, closeOnClick = T, maxWidth = popup_w, maxHeight = popup_h*0.4, autoPan = T),
+              popupOptions = popupOptions(closeButton = F, closeOnClick = T, maxWidth = popup_w, maxHeight = popup_h*0.6, autoPan = T),
               group = "2008 - Agosto 2022 (Histórico)",
               # Lineas de los paises
               color = "white", weight = 1, stroke = T,
@@ -573,7 +586,7 @@ map_prog <- leaflet(mapa_base, height = "100vh", width = "100vw",
   # 2023
   addPolygons(data = mapa_prog %>% dplyr::filter(period == "2023"),
               popup = ~table_prog,
-              popupOptions = popupOptions(closeButton = F, closeOnClick = T, maxWidth = popup_w, maxHeight = popup_h*0.4, autoPan = T),
+              popupOptions = popupOptions(closeButton = F, closeOnClick = T, maxWidth = popup_w, maxHeight = popup_h*0.6, autoPan = T),
               group = "Año 2023",
               # Lineas de los paises
               color = "white", weight = 1, stroke = T,
@@ -630,6 +643,12 @@ mapa_prog_final <- browsable(
 
 mapa_prog_final
 
+#--------------------------#
+# C. Exportar ----
+#--------------------------#
+
 # Exportar
 save_html(mapa_pais_final, glue("{graficas}/mapa_ods_cv_pais_2008-2023.html"))
+save_html(mapa_pais_final, "index1.html")
 save_html(mapa_prog_final, glue("{graficas}/mapa_ods_cv_prog_2008-2023.html"))
+save_html(mapa_prog_final, "index2.html")

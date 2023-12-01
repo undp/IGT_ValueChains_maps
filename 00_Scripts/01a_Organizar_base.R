@@ -1,6 +1,6 @@
 #-------------------------------------------------------#
 # ODS Cadenas de Valor ----
-# Ultima fecha de modificacion: 20 de sept, 2023
+# Ultima fecha de modificacion: 1 dic, 2023
 # Organizar base de datos de empresas
 #-------------------------------------------------------#
 
@@ -147,6 +147,7 @@ data_pais$country[data_pais$country == 'MEXICO'] <- 'MÉXICO'
 data_pais$country[data_pais$country == 'PERU'] <- 'PERÚ'
 data_pais$country[data_pais$country == 'DOMINICANA'] <- 'REPÚBLICA DOMINICANA'
 data_pais$country[data_pais$country == 'HAITI'] <- 'HAITÍ'
+data_pais$country[data_pais$country == 'PAKISTAN'] <- 'PAKISTÁN'
 
 # Agrupar datos a nivel de pais
 data_pais_clean <- data_pais %>%
